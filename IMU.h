@@ -60,9 +60,9 @@ void IMUdata() {
 
     sbus_to_pid(orientation_z, orientation_y, Thr, Ail, Ele, Rud, ch5, failsafe, rate_pitch, rate_roll, rate_yaw);
 
-    pid_update(gyro_x, gyro_y, gyro_z, rate_roll, rate_pitch, rate_yaw, roll_output, pitch_output, yaw_output, BNO055_SAMPLERATE_DELAY_MS);
+    pid_update(orientation_z, orientation_y, gyro_z, rate_roll, rate_pitch, rate_yaw, roll_output, pitch_output, yaw_output, BNO055_SAMPLERATE_DELAY_MS);
 
-    PIDmain(roll_output, pitch_output, yaw_output);
+    PIDmain(roll_output, pitch_output, yaw_output, Thr);
 
 
 

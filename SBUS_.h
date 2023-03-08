@@ -25,7 +25,7 @@ void sbus_setup() {
 
 void sbus_read() {
   if (sbus_rx.Read()) {
-    /* Grab the received data */
+    /* Sbus received data */
     data = sbus_rx.data();
     /* Display the received data */
     // for (int8_t i = 0; i < data.NUM_CH; i++) {
@@ -40,7 +40,7 @@ void sbus_read() {
     
 
     // Map values of Ail Ele to values of Angle input
-    Thr = map(data.ch[0], 172, 1811, 0, 800); // controls the motor power
+    Thr = map(data.ch[0], 172, 1811, 0, 150); // controls the motor power
     Ail = map(data.ch[1], 172, 1811, -30, 30); // controls the max bank angle of the heli swash
     Ele = map(data.ch[2], 172, 1811, -30, 30); // controls the max pitch anglke of the heli swash 
     Rud = map(data.ch[3], 172, 1811, -50, 50); // usign any arbitrary value for rudder, I dont think this matters
