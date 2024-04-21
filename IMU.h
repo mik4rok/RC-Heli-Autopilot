@@ -1,51 +1,113 @@
-#include <Wire.h>
+// Basic on demo for accelerometer readings from Adafruit MPU6050
+#include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
-#include <Adafruit_BNO055.h>
-#include <utility/imumaths.h>
+#include <Wire.h>
 
 /* Set the delay between fresh samples */
-uint16_t BNO055_SAMPLERATE_DELAY_MS = 10;
+uint16_t SAMPLERATE_DELAY_MS = 10;
 
-// Check I2C device address and correct line below (by default address is 0x29 or 0x28)
-//                                   id, address
-Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28, &Wire);
+// Check I2C device address and correct line below (by default address is 0x68)
+Adafruit_MPU6050 mpu;
 
 unsigned long lastTime = 0;
 
 void IMUsetup(void) {
-  /* Initialise the sensor */
-  if (!bno.begin()) {
+  // Try to initialize!
+  if (!mpu.begin()) {
     /* There was a problem detecting the BNO055 ... check your connections */
-    Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
-    while (1)
+    Serial.println("Failed to find MPU6050 chip");
+    while (1) {
       ;
+    }
+
+    lastTime = millis();
+  }
+  Serial.println("MPU6050 Found!");
+
+  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+  Serial.print("Accelerometer range set to: ");
+  switch (mpu.getAccelerometerRange()) {
+  case MPU6050_RANGE_2_G:
+    Serial.println("+-2G");
+    break;
+  case MPU6050_RANGE_4_G:
+    Serial.println("+-4G");
+    break;
+  case MPU6050_RANGE_8_G:
+    Serial.println("+-8G");
+    break;
+  case MPU6050_RANGE_16_G:
+    Serial.println("+-16G");
+    break;
+  }
+  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
+  Serial.print("Gyro range set to: ");
+  switch (mpu.getGyroRange()) {
+  case MPU6050_RANGE_250_DEG:
+    Serial.println("+- 250 deg/s");
+    break;
+  case MPU6050_RANGE_500_DEG:
+    Serial.println("+- 500 deg/s");
+    break;
+  case MPU6050_RANGE_1000_DEG:
+    Serial.println("+- 1000 deg/s");
+    break;
+  case MPU6050_RANGE_2000_DEG:
+    Serial.println("+- 2000 deg/s");
+    break;
   }
 
-  lastTime = millis();
+  mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
+  Serial.print("Filter bandwidth set to: ");
+  switch (mpu.getFilterBandwidth()) {
+  case MPU6050_BAND_260_HZ:
+    Serial.println("260 Hz");
+    break;
+  case MPU6050_BAND_184_HZ:
+    Serial.println("184 Hz");
+    break;
+  case MPU6050_BAND_94_HZ:
+    Serial.println("94 Hz");
+    break;
+  case MPU6050_BAND_44_HZ:
+    Serial.println("44 Hz");
+    break;
+  case MPU6050_BAND_21_HZ:
+    Serial.println("21 Hz");
+    break;
+  case MPU6050_BAND_10_HZ:
+    Serial.println("10 Hz");
+    break;
+  case MPU6050_BAND_5_HZ:
+    Serial.println("5 Hz");
+    break;
+  }
+
+  Serial.println("");
+  delay(100);
 }
 
 // Declare a function to return sensor data.
 void getSensorData(float &gyro_x, float &gyro_y, float &gyro_z, float &orientation_x, float &orientation_y, float &orientation_z) {
 
-  // Get orientation and angular velocity data.
-  sensors_event_t orientationData, angVelocityData;
-  bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
-  bno.getEvent(&angVelocityData, Adafruit_BNO055::VECTOR_GYROSCOPE);
+  /* Get new sensor events with the readings */
+  sensors_event_t a, g, temp;
+  mpu.getEvent(&a, &g, &temp);
 
-  // Store gyro and orientation data in the function parameters.
-  gyro_x = angVelocityData.gyro.x;
-  gyro_y = angVelocityData.gyro.y;
-  gyro_z = angVelocityData.gyro.z;
-  orientation_x = orientationData.orientation.x;
-  orientation_y = orientationData.orientation.y;
-  orientation_z = orientationData.orientation.z;
+ // Store gyro and orientation data in the function parameters.
+  gyro_x = g.gyro.x;
+  gyro_y = g.gyro.y;
+  gyro_z = g.gyro.z;
+  orientation_x = a.acceleration.x;
+  orientation_y = a.acceleration.y;
+  orientation_z = a.acceleration.z;
 }
 
 float roll_output = 0, pitch_output = 0, yaw_output = 0;
 
 void IMUdata() {
 
-  if (millis() - lastTime >= BNO055_SAMPLERATE_DELAY_MS) {
+  if (millis() - lastTime >= SAMPLERATE_DELAY_MS) {
     lastTime = millis();
     float gyro_x, gyro_y, gyro_z, orientation_x, orientation_y, orientation_z;
     float rate_pitch = 0.0, rate_roll = 0.0, rate_yaw = 0.0;  // output from !
@@ -60,7 +122,7 @@ void IMUdata() {
 
     sbus_to_pid(orientation_z, orientation_y, Thr, Ail, Ele, Rud, ch5, failsafe, rate_pitch, rate_roll, rate_yaw);
 
-    pid_update(orientation_z, orientation_y, gyro_z, rate_roll, rate_pitch, rate_yaw, roll_output, pitch_output, yaw_output, BNO055_SAMPLERATE_DELAY_MS);
+    pid_update(orientation_z, orientation_y, gyro_z, rate_roll, rate_pitch, rate_yaw, roll_output, pitch_output, yaw_output, SAMPLERATE_DELAY_MS);
 
     PIDmain(roll_output, pitch_output, yaw_output, Thr);
 
