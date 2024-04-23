@@ -2,6 +2,7 @@
 #include <Servo.h>
 Servo AilServo;
 Servo EleServo;
+Servo YawServo;
 
 // Define PID constants ROLL
 #define KRP 3.25
@@ -39,6 +40,7 @@ float prev_yaw_error = 0;
 void servo_setup() {
   AilServo.attach(8);
   EleServo.attach(9);
+  YawServo.attach(9);
 }
 
 
@@ -108,8 +110,8 @@ void PIDmain(float roll_output, float pitch_output, float yaw_output, float Thr)
   int roll_pwm = map(roll_output, -90, 90, 1800, 1200);
   int pitch_pwm = map(pitch_output, -90, 90, 1200, 1800);
   int yaw_pwm = map(yaw_output, -100, 100, 1000, 600);
-  yaw_pwm = yaw_pwm + (Thr * 0.62); //mixing thr 
-  yaw_pwm = constrain(yaw_pwm, 600, 1000);
+  int yaw_pwm_mix = yaw_pwm + (Thr * 0.62); //mixing thr 
+  yaw_pwm_mix = constrain(yaw_pwm, 600, 1000);
 
 
 
@@ -123,11 +125,13 @@ void PIDmain(float roll_output, float pitch_output, float yaw_output, float Thr)
     analogWrite(1, Thr);
     AilServo.writeMicroseconds(roll_pwm);   // sets the servo position to its minimum
     EleServo.writeMicroseconds(pitch_pwm);  // sets the servo position to its minimum
+    YawServo.writeMicroseconds(yaw_pwm);  // sets the servo position to its minimum
   } else {
     analogWrite(0, 0);
     analogWrite(1, 0);
     AilServo.writeMicroseconds(1500);  // sets the servo position to its minimum
     EleServo.writeMicroseconds(1500);  // sets the servo position to its minimum
+    YawServo.writeMicroseconds(1500);  // sets the servo position to its minimum
   }
 
 
@@ -135,5 +139,5 @@ void PIDmain(float roll_output, float pitch_output, float yaw_output, float Thr)
   Serial.println("roll PWM 1000-2000: " + String(roll_pwm) + " Roll PID: " + String(roll_output));
   Serial.println("Pitch PWM 1000-2000: " + String(pitch_pwm) + " Roll PID: " + String(pitch_output));
 
-  //Serial.println("Yaw PWM 0-1024: " + String(yaw_pwm) + " Yaw PID: " + String(yaw_output));
+  Serial.println("Yaw PWM 0-1024: " + String(yaw_pwm) + " Yaw PID: " + String(yaw_output));
 }
